@@ -1,8 +1,5 @@
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local StarterGui = game:GetService("StarterGui")
-
-local highlightingEnabled = true -- Toggle state
 
 -- Function to create a highlight effect
 local function createHighlight(part)
@@ -27,7 +24,6 @@ end
 
 -- Function to highlight both Head and FakeHead
 local function highlightPlayerHead(player)
-    if not highlightingEnabled then return end -- Disable highlighting if toggled off
     local character = Workspace:FindFirstChild(player.Name) -- Look for player in Workspace
     if character then
         local head = character:FindFirstChild("Head")
@@ -66,20 +62,4 @@ for _, player in pairs(Players:GetPlayers()) do
         task.wait(1) -- Ensure character is fully loaded
         highlightPlayerHead(player)
     end)
-end)
-
--- UI Toggle Button
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-
-local toggleButton = Instance.new("TextButton")
-toggleButton.Size = UDim2.new(0, 100, 0, 50)
-toggleButton.Position = UDim2.new(1, -135, 1, -85) -- Positioned 35px from bottom-right corner
-toggleButton.Text = "Toggle Highlight"
-toggleButton.Parent = screenGui
-toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-
-toggleButton.MouseButton1Click:Connect(function()
-    highlightingEnabled = not highlightingEnabled
-    toggleButton.BackgroundColor3 = highlightingEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 end)
