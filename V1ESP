@@ -74,7 +74,7 @@ screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 100, 0, 50)
-toggleButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+toggleButton.Position = UDim2.new(1, -135, 1, -85) -- Positioned 35px from bottom-right corner
 toggleButton.Text = "Toggle Highlight"
 toggleButton.Parent = screenGui
 toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
