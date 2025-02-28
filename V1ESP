@@ -1,0 +1,85 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+
+local highlightingEnabled = true -- Toggle state
+
+-- Function to create a highlight effect
+local function createHighlight(part)
+    if not part:FindFirstChild("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = part.Parent -- Parent to character for better visibility
+        highlight.Adornee = part
+        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Make it visible through walls
+    end
+end
+
+-- Function to highlight the entire character
+local function highlightCharacter(character)
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            createHighlight(part)
+        end
+    end
+end
+
+-- Function to highlight both Head and FakeHead
+local function highlightPlayerHead(player)
+    if not highlightingEnabled then return end -- Disable highlighting if toggled off
+    local character = Workspace:FindFirstChild(player.Name) -- Look for player in Workspace
+    if character then
+        local head = character:FindFirstChild("Head")
+        local fakeHead = character:FindFirstChild("FakeHead")
+        
+        if head and head:IsA("BasePart") then
+            head.Color = Color3.fromRGB(255, 0, 0) -- Change the head's color to red
+            head.Material = Enum.Material.Neon -- Make it glow
+            createHighlight(head)
+        end
+        
+        if fakeHead and fakeHead:IsA("BasePart") then
+            fakeHead.Color = Color3.fromRGB(255, 0, 0) -- Change FakeHead's color to red
+            fakeHead.Material = Enum.Material.Neon -- Make it glow
+            createHighlight(fakeHead)
+        end
+        
+        highlightCharacter(character)
+    end
+end
+
+-- Connect events to handle new players joining
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(1) -- Ensure character is fully loaded
+        highlightPlayerHead(player)
+    end)
+end)
+
+-- Initial setup: highlight existing players
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        highlightPlayerHead(player)
+    end
+    player.CharacterAdded:Connect(function()
+        task.wait(1) -- Ensure character is fully loaded
+        highlightPlayerHead(player)
+    end)
+end)
+
+-- UI Toggle Button
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 100, 0, 50)
+toggleButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+toggleButton.Text = "Toggle Highlight"
+toggleButton.Parent = screenGui
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+
+toggleButton.MouseButton1Click:Connect(function()
+    highlightingEnabled = not highlightingEnabled
+    toggleButton.BackgroundColor3 = highlightingEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+end)
