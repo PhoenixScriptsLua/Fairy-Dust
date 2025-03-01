@@ -1,66 +1,74 @@
---LOWKEY DOESN'T WORK, WILL FIX IN THE NEAR FUTURE
+--lol, decided it was easier to start from the ground up, consider this V1.1
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
 
--- Function to create a highlight effect
-local function createHighlight(part)
-    if not part:FindFirstChild("Highlight") then
-        local highlight = Instance.new("Highlight")
-        highlight.Parent = part.Parent -- Parent to character for better visibility
-        highlight.Adornee = part
-        highlight.FillColor = Color3.fromRGB(255, 0, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Make it visible through walls
+local function createHighlight(character, player, isOverlay)
+    local existingHighlight = character:FindFirstChild("Highlight_" .. (isOverlay and "Overlay" or "Base"))
+    if existingHighlight then
+        existingHighlight:Destroy()
     end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "Highlight_" .. (isOverlay and "Overlay" or "Base")
+    highlight.FillTransparency = 1
+    highlight.OutlineTransparency = 0
+
+    if player.Team then
+        highlight.OutlineColor = player.TeamColor.Color
+    else
+        highlight.OutlineColor = Color3.new(1, 1, 1)
+    end
+
+    highlight.DepthMode = isOverlay and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+    highlight.Parent = character
 end
 
--- Function to highlight the entire character
-local function highlightCharacter(character)
-    for _, part in pairs(character:GetChildren()) do
-        if part:IsA("BasePart") then
-            createHighlight(part)
+local function applyHighlights(character, player)
+    createHighlight(character, player, false)
+    createHighlight(character, player, true)
+end
+
+local function adjustHeadTransparency(character)
+    for _, part in ipairs(character:GetDescendants()) do
+        if part:IsA("BasePart") and (part.Name == "FakeHead" or part.Name == "Head") then
+            part.Transparency = 0.3
         end
     end
 end
 
--- Function to highlight both Head and FakeHead
-local function highlightPlayerHead(player)
-    local character = Workspace:FindFirstChild(player.Name) -- Look for player in Workspace
-    if character then
-        local head = character:FindFirstChild("Head")
-        local fakeHead = character:FindFirstChild("FakeHead")
-        
-        if head and head:IsA("BasePart") then
-            head.Color = Color3.fromRGB(255, 0, 0) -- Change the head's color to red
-            head.Material = Enum.Material.Neon -- Make it glow
-            createHighlight(head)
-        end
-        
-        if fakeHead and fakeHead:IsA("BasePart") then
-            fakeHead.Color = Color3.fromRGB(255, 0, 0) -- Change FakeHead's color to red
-            fakeHead.Material = Enum.Material.Neon -- Make it glow
-            createHighlight(fakeHead)
-        end
-        
-        highlightCharacter(character)
-    end
+local function onCharacterAdded(character, player)
+    applyHighlights(character, player)
+    adjustHeadTransparency(character)
 end
 
--- Connect events to handle new players joining
-Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        task.wait(1) -- Ensure character is fully loaded
-        highlightPlayerHead(player)
-    end)
-end)
-
--- Initial setup: highlight existing players
-for _, player in pairs(Players:GetPlayers()) do
+local function onPlayerAdded(player)
     if player.Character then
-        highlightPlayerHead(player)
+        onCharacterAdded(player.Character, player)
     end
-    player.CharacterAdded:Connect(function()
-        task.wait(1) -- Ensure character is fully loaded
-        highlightPlayerHead(player)
+    
+    player.CharacterAdded:Connect(function(character)
+        onCharacterAdded(character, player)
     end)
-end)
+
+    player:GetPropertyChangedSignal("Team"):Connect(function()
+        if player.Character then
+            applyHighlights(player.Character, player)
+        end
+    end)
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    onPlayerAdded(player)
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+local function showAlert()
+    StarterGui:SetCore("SendNotification", {
+        Title = "PhoenixScriptsLua",
+        Text = "Made by PhoenixScriptsLua",
+        Duration = 5
+    })
+end
+
+showAlert()
