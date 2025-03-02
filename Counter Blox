@@ -1,4 +1,4 @@
---lol, decided it was easier to start from the ground up, consider this V1.1
+--edited name LOL
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 
