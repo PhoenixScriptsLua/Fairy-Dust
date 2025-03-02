@@ -1,0 +1,56 @@
+--This is for Blackhawk Rescue Mission 5 (Wallhack and Fullbright)
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+
+-- Enable Fullbright
+local function enableFullbright()
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.Brightness = 2
+    Lighting.GlobalShadows = false
+end
+
+enableFullbright()
+
+local function getTeamColor(model)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character == model then
+            return player.Team and player.TeamColor.Color or Color3.new(1, 1, 1) -- Default to white if no team
+        end
+    end
+    return Color3.new(1, 1, 1) -- Default color if no player is found
+end
+
+local function highlightParts()
+    for _, maleModel in ipairs(Workspace:GetChildren()) do
+        if maleModel:IsA("Model") and maleModel.Name == "Male" then
+            local highlight = maleModel:FindFirstChild("BodyHighlight")
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "BodyHighlight"
+                highlight.FillTransparency = 1  -- Fully transparent fill
+                highlight.OutlineTransparency = 0  -- Fully visible outline
+                highlight.Parent = maleModel
+            end
+            highlight.OutlineColor = getTeamColor(maleModel)
+        end
+    end
+end
+
+highlightParts()
+
+Workspace.ChildAdded:Connect(function(child)
+    if child:IsA("Model") and child.Name == "Male" then
+        highlightParts()
+    end
+end)
+
+Workspace.ChildRemoved:Connect(function()
+    highlightParts()
+end)
+
+Players.PlayerAdded:Connect(function(player)
+    player:GetPropertyChangedSignal("Team"):Connect(function()
+        highlightParts()
+    end)
+end)
