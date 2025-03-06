@@ -1,56 +1,70 @@
---This is for Blackhawk Rescue Mission 5 (Wallhack and Fullbright)
+--this is for Blackhawk Rescue Mission 5
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 
--- Enable Fullbright
+-- Enable Fullbright and disable fog in a loop to ensure it stays active
 local function enableFullbright()
-    Lighting.Ambient = Color3.new(1, 1, 1)
-    Lighting.Brightness = 2
-    Lighting.GlobalShadows = false
-end
-
-enableFullbright()
-
-local function getTeamColor(model)
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player.Character == model then
-            return player.Team and player.TeamColor.Color or Color3.new(1, 1, 1) -- Default to white if no team
-        end
-    end
-    return Color3.new(1, 1, 1) -- Default color if no player is found
-end
-
-local function highlightParts()
-    for _, maleModel in ipairs(Workspace:GetChildren()) do
-        if maleModel:IsA("Model") and maleModel.Name == "Male" then
-            local highlight = maleModel:FindFirstChild("BodyHighlight")
-            if not highlight then
-                highlight = Instance.new("Highlight")
-                highlight.Name = "BodyHighlight"
-                highlight.FillTransparency = 1  -- Fully transparent fill
-                highlight.OutlineTransparency = 0  -- Fully visible outline
-                highlight.Parent = maleModel
-            end
-            highlight.OutlineColor = getTeamColor(maleModel)
-        end
+    while true do
+        Lighting.Ambient = Color3.new(1, 1, 1)
+        Lighting.Brightness = 2
+        Lighting.GlobalShadows = false
+        Lighting.FogEnd = 1000000 -- Disable fog by setting it extremely far
+        Lighting.FogStart = 1000000
+        wait(1) -- Reapply settings every second to prevent interference
     end
 end
 
-highlightParts()
+spawn(enableFullbright) -- Run Fullbright in a separate thread
 
-Workspace.ChildAdded:Connect(function(child)
-    if child:IsA("Model") and child.Name == "Male" then
-        highlightParts()
+local highlightedModels = {} -- Cache to track already highlighted models
+
+local function applyHighlight(maleModel)
+    if maleModel:IsA("Model") and maleModel.Name == "Male" and not highlightedModels[maleModel] then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "BodyHighlight"
+        highlight.FillTransparency = 1  -- Fully transparent fill
+        highlight.OutlineTransparency = 0  -- Fully visible outline
+        highlight.OutlineColor = Color3.new(1, 0, 1) -- HOT PINK
+        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop -- Ensures visibility even when models overlap
+        highlight.Parent = maleModel
+        
+        highlightedModels[maleModel] = true -- Mark as highlighted
+    end
+end
+
+local function removeHighlight(maleModel)
+    if highlightedModels[maleModel] then
+        local highlight = maleModel:FindFirstChild("BodyHighlight")
+        if highlight then
+            highlight:Destroy()
+        end
+        highlightedModels[maleModel] = nil
+    end
+end
+
+-- Apply highlights to existing models
+for _, maleModel in ipairs(Workspace:GetChildren()) do
+    applyHighlight(maleModel)
+end
+
+-- Listen for new models being added
+Workspace.DescendantAdded:Connect(function(descendant)
+    if descendant:IsA("Model") and descendant.Name == "Male" then
+        applyHighlight(descendant)
     end
 end)
 
-Workspace.ChildRemoved:Connect(function()
-    highlightParts()
+-- Listen for models being removed
+Workspace.DescendantRemoving:Connect(function(descendant)
+    if descendant:IsA("Model") and descendant.Name == "Male" then
+        removeHighlight(descendant)
+    end
 end)
 
+-- Apply highlights when players spawn
 Players.PlayerAdded:Connect(function(player)
-    player:GetPropertyChangedSignal("Team"):Connect(function()
-        highlightParts()
+    player.CharacterAdded:Connect(function(character)
+        applyHighlight(character)
     end)
 end)
